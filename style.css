@@ -1,0 +1,271 @@
+/* ===== Background + Basic Setup ===== */
+body {
+  background-image: url('background.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-attachment: fixed;
+  height: 100vh;
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+  padding: 0;
+  animation: float 50s ease-in-out infinite;
+  position: relative;
+  z-index: 0;
+}
+
+/* ===== Container ===== */
+.container {
+  text-align: center;
+  padding: 50px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== Logo ===== */
+.logo {
+  width: 300px;
+  margin-bottom: 20px;
+  opacity: 0;
+  animation: fadeIn 2s forwards;
+}
+
+/* ===== Description Text ===== */
+.description-text {
+  font-size: 20px;
+  font-weight: bold;
+  color: black;
+  text-align: center;
+  margin-top: 20px;
+  margin-bottom: 40px;
+  animation: fadeIn 2s forwards;
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ===== Keyframes ===== */
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes float {
+  0% { background-position: center center; }
+  50% { background-position: center 5px; }
+  100% { background-position: center center; }
+}
+
+/* ===== Video Section ===== */
+.video-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 120px;
+  margin-top: 40px;
+}
+
+/* Embedded Video */
+.tutorial-video {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.tutorial-video iframe {
+  border-radius: 15px;
+  border: 2px solid white;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+  transition: box-shadow 0.3s ease;
+  margin-top: 20px;
+  margin-left: 80px;
+}
+
+.tutorial-video iframe:hover {
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
+}
+
+/* Compile Avatar Button */
+.compile-avatar-button .compile-button {
+  font-family: 'Arial', sans-serif;
+  display: inline-block;
+  padding: 20px 50px;
+  font-size: 28px;
+  font-weight: bold;
+  color: white;
+  background-color: black;
+  border: none;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background-color 0.3s, transform 0.3s;
+  white-space: nowrap;
+}
+
+.compile-avatar-button .compile-button:hover {
+  background-color: #333333;
+  transform: scale(1.1);
+}
+
+/* ===== Footer Buttons (FAQ / About / TOS) ===== */
+.footer-buttons {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  z-index: 1;
+}
+
+.footer-btn {
+  font-family: 'Poppins', sans-serif;
+  font-size: 18px;
+  font-weight: bold;
+  background: white;
+  color: black;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.3s ease, background-color 0.3s ease;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+
+.footer-btn:hover {
+  transform: scale(1.1);
+  background-color: #f0f0f0;
+}
+
+/* Divider between Footer Buttons */
+.divider {
+  width: 2px;
+  height: 25px;
+  background-color: black;
+}
+
+/* ===== Modal Popup ===== */
+.modal {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 400px;
+  background-color: rgba(0, 0, 0, 0.55); /* Subtle dark overlay, no blur */
+  z-index: 10;
+  /* Removed: transition and backdrop-filter */
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  width: 100%;
+  text-align: center;
+  animation: slideDown 0.5s ease forwards;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  position: relative;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Slide Down Animation */
+@keyframes slideDown {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -60%);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* Modal Close Button */
+.close {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 28px;
+  font-weight: bold;
+  color: #333;
+  cursor: pointer;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.close:hover {
+  transform: scale(1.3);
+  color: red;
+}
+
+/* Modal Title and Text */
+.modal-content h2 {
+  margin-top: 0;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.modal-content p {
+  font-size: 16px;
+  margin-top: 15px;
+}
+
+/* ===== Input Textarea and Button Styling ===== */
+textarea {
+  width: 100%;
+  max-width: 90%;
+  height: 150px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  padding: 20px;
+  font-size: 1rem;
+  text-align: center;
+  vertical-align: middle;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+button {
+  font-size: 36px;
+  padding: 30px 80px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+/* === Fade-out Effect for Modal Content === */
+.modal-content.fade-out {
+  animation: fadeOut 1s forwards;
+}
+
+/* Removed .modal.fade-out background-color transition and any blur */
+
+/* Fade-out effect keyframes */
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
