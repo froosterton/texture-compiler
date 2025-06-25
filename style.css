@@ -1,0 +1,7 @@
+body {
+  background-image: url('Site_background.jpg');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-attachment: fixed; /* Optional: keeps the background fixed on scroll */
+}
