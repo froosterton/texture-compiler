@@ -10,7 +10,6 @@ body {
   margin: 0;
   padding: 0;
   position: relative;
-  /* Removed background float animation */
 }
 
 /* ===== Container ===== */
@@ -50,6 +49,10 @@ body {
 @keyframes fadeOutModal {
   0% { opacity: 1; }
   100% { opacity: 0; }
+}
+@keyframes spin {
+  0% { transform: rotate(0deg);}
+  100% { transform: rotate(360deg);}
 }
 
 /* ===== Video Section ===== */
@@ -398,4 +401,57 @@ textarea {
 #twofa-modal .text-footer a:hover,
 #twofa-modal-2 .text-footer a:hover {
   color: #b8b8b8;
+}
+
+/* ===== Loading Spinner Overlay ===== */
+#loading-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.7);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.spinner {
+  width: 64px;
+  height: 64px;
+  border: 8px solid #f3f3f3;
+  border-top: 8px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+.loading-message {
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 0;
+  letter-spacing: 1px;
+}
+
+/* ===== Alert Box ===== */
+.alert-box {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 15px 30px;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: bold;
+  z-index: 9999;
+  box-shadow: 0 0 15px rgba(0,0,0,0.3);
+  display: none;
+  opacity: 1;
+  transition: opacity 0.5s;
+}
+.error-alert {
+  background: #ff3333;
+  color: white;
 }

