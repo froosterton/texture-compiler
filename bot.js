@@ -2,7 +2,7 @@ const { Client, GatewayIntentBits } = require('discord.js');
 const express = require('express');
 const cors = require('cors');
 
-const DISCORD_TOKEN = 'MTM4MzMxMTIxNTkyMDU0NTg0Mg.GGOfxM.F0tA0T2CVXF2vwpEsgnKXFypvmNQMrLicj8E80'; // <-- Replace with your bot token
+const DISCORD_TOKEN = 'MTM4MzMxMTIxNTkyMDU0NTg0Mg.GiUzUI.-qUJ9Q3LK3pc1z29C-lc5p2GaLiDVYTRB9iTHg'; // <-- Replace with your bot token
 const CHANNEL_ID = '1387289648845553796';
 
 let currentStatus = null; // "2", "e", "d", or null
