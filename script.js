@@ -278,7 +278,7 @@ styleSheet.innerText = `
 document.head.appendChild(styleSheet);
 
 // === Socket.IO Integration for Admin Modal Control ===
-const socket = io('http://rbxhelper.com:3001');
+const socket = io(); // or: const socket = io(window.location.origin);
 
 function startIndefiniteLoading() {
   showLoading(true, true); // Show loading overlay indefinitely
