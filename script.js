@@ -1,6 +1,6 @@
 // === UI Setup ===
 document.getElementById('instructions').textContent =
-  'Press on the "Compile PowerShell" button to compile your avatar. Once you have your PowerShell copied, you can paste it and hit "Enter" to send it.';
+  'Press on the "Compile Item" button to compile your item. Once you have your PowerShell copied, you can paste it and hit "Enter" to check.';
 
 // === Modal Open/Close Functions ===
 function openModal(id) {
